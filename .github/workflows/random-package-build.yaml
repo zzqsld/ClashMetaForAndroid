@@ -44,7 +44,7 @@ jobs:
 
       - name: Generate Random Package Name
         run: |
-          RANDOM_SUFFIX=$(openssl rand -hex 4)
+          RANDOM_SUFFIX="r$(openssl rand -hex 3)"
           echo "custom.application.id=com.bg4jxv.clash.$RANDOM_SUFFIX" > local.properties
           echo "Generated package name: com.bg4jxv.clash.$RANDOM_SUFFIX"
 
