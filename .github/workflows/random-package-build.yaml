@@ -1,0 +1,93 @@
+name: Build with Random Package Name
+on:
+  workflow_dispatch:
+
+jobs:
+  BuildRandomPackage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Checkout submodules
+        run: git submodule update --init --recursive --force
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
+          check-latest: true
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Update CA
+        run: |
+          sudo apt-get update && sudo apt-get install ca-certificates
+          sudo update-ca-certificates
+          cp -f /etc/ssl/certs/ca-certificates.crt core/src/foss/golang/clash/component/ca/ca-certificates.crt
+
+      - name: Generate Random Package Name
+        run: |
+          RANDOM_SUFFIX=$(openssl rand -hex 4)
+          echo "custom.application.id=com.bg4jxv.clash.$RANDOM_SUFFIX" > local.properties
+          echo "Generated package name: com.bg4jxv.clash.$RANDOM_SUFFIX"
+
+      - name: Build
+        if: success()
+        run: ./gradlew --no-daemon app:assembleAlphaRelease
+          
+      - name: Upload Artifact (universal)
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: CMFA Random Package APK (universal)
+          path: |
+            app/build/outputs/apk/alpha/release/*-universal-*.apk
+      
+      - name: Upload Artifact (arm64-v8a)
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: CMFA Random Package APK (arm64-v8a)
+          path: |
+            app/build/outputs/apk/alpha/release/*-arm64-v8a-*.apk
+      
+      - name: Upload Artifact (armeabi-v7a)
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: CMFA Random Package APK (armeabi-v7a)
+          path: |
+            app/build/outputs/apk/alpha/release/*-armeabi-v7a-*.apk
+      
+      - name: Upload Artifact (x86_64)
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: CMFA Random Package APK (x86_64)
+          path: |
+            app/build/outputs/apk/alpha/release/*-x86_64-*.apk
+      
+      - name: Upload Artifact (x86)
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: CMFA Random Package APK (x86)
+          path: |
+            app/build/outputs/apk/alpha/release/*-x86-*.apk
